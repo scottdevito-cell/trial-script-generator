@@ -366,8 +366,7 @@
 </header>
 
 <div class="progress-bar" id="progressBar">
-  <div class="step-indicator active" data-step="0">0 · API Key</div>
-  <div class="step-indicator" data-step="1">1 · Area of Law</div>
+  <div class="step-indicator active" data-step="1">1 · Area of Law</div>
   <div class="step-indicator" data-step="2">2 · Case Type</div>
   <div class="step-indicator" data-step="3">3 · Objections</div>
   <div class="step-indicator" data-step="4">4 · Generate</div>
@@ -375,19 +374,6 @@
 </div>
 
 <main>
-
-  <!-- STEP 0: API Key -->
-  <div class="panel active" id="step0">
-    <div class="panel-title">Enter Your Anthropic API Key</div>
-    <div class="panel-sub">This tool calls the Claude API to generate trial scripts. Your key is used only in your browser for this session and is never stored anywhere.<br><br>Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--navy)">console.anthropic.com</a>.</div>
-    <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-…"
-      style="width:100%;padding:0.7rem 1rem;font-size:0.9rem;border:1.5px solid var(--border);border-radius:5px;font-family:'Source Sans 3',sans-serif;margin-bottom:0.75rem;background:var(--cream);"
-      oninput="checkApiKey()" onkeydown="if(event.key==='Enter')submitApiKey()">
-    <div class="error-box" id="apiKeyError" style="display:none;margin-bottom:0.75rem"></div>
-    <div class="btn-row">
-      <button class="btn-primary" id="apiKeyNext" onclick="submitApiKey()" disabled>Continue →</button>
-    </div>
-  </div>
 
   <!-- STEP 1: Area of Law -->
   <div class="panel" id="step1">
@@ -618,7 +604,6 @@ function init() {
 // ── NAVIGATION ─────────────────────────────────────────────────────────────
 function goTo(n) {
   if (n === 4) buildSummary();
-  // panels: step0=index0, step1=index1 ... step5=index6
   document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === n));
   document.querySelectorAll('.step-indicator').forEach(s => {
     const sn = parseInt(s.dataset.step);
@@ -906,18 +891,7 @@ function startOver() {
 // ── API KEY ────────────────────────────────────────────────────────────────
 let apiKey = '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';
 
-function checkApiKey() {
-  const val = document.getElementById('apiKeyInput').value.trim();
-  document.getElementById('apiKeyNext').disabled = val.length < 20;
-}
 
-function submitApiKey() {
-  const val = document.getElementById('apiKeyInput').value.trim();
-  if (val.length < 20) return;
-  apiKey = val;
-  document.getElementById('apiKeyError').style.display = 'none';
-  goTo(1);  // keep API key, just restart selections
-}
 
 init();
 </script>
