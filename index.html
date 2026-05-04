@@ -366,8 +366,8 @@
 </header>
 
 <div class="progress-bar" id="progressBar">
-  <div class="step-indicator done" data-step="0">0 · API Key</div>
-  <div class="step-indicator active" data-step="1">1 · Area of Law</div>
+  <div class="step-indicator active" data-step="0">0 · API Key</div>
+  <div class="step-indicator" data-step="1">1 · Area of Law</div>
   <div class="step-indicator" data-step="2">2 · Case Type</div>
   <div class="step-indicator" data-step="3">3 · Objections</div>
   <div class="step-indicator" data-step="4">4 · Generate</div>
@@ -377,7 +377,7 @@
 <main>
 
   <!-- STEP 0: API Key -->
-  <div class="panel" id="step0">
+  <div class="panel active" id="step0">
     <div class="panel-title">Enter Your Anthropic API Key</div>
     <div class="panel-sub">This tool calls the Claude API to generate trial scripts. Your key is used only in your browser for this session and is never stored anywhere.<br><br>Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--navy)">console.anthropic.com</a>.</div>
     <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-…"
@@ -390,7 +390,7 @@
   </div>
 
   <!-- STEP 1: Area of Law -->
-  <div class="panel active" id="step1">
+  <div class="panel" id="step1">
     <div class="panel-title">Select an Area of Law</div>
     <div class="panel-sub">Choose the substantive area of law this trial will involve.</div>
     <div class="option-grid" id="areaGrid"></div>
@@ -734,13 +734,10 @@ async function generateScript() {
   const prompt = buildPrompt();
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("/api/generate", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-request-source": "user-browser"
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
