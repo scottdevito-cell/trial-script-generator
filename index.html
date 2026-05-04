@@ -376,7 +376,7 @@
 <main>
 
   <!-- STEP 1: Area of Law -->
-  <div class="panel" id="step1">
+  <div class="panel active" id="step1">
     <div class="panel-title">Select an Area of Law</div>
     <div class="panel-sub">Choose the substantive area of law this trial will involve.</div>
     <div class="option-grid" id="areaGrid"></div>
@@ -388,7 +388,7 @@
     <div class="panel-sub" id="step2Sub">Choose the specific category of lawsuit.</div>
     <div class="option-grid" id="caseGrid"></div>
     <div class="btn-row">
-      <button class="back-link" onclick="goTo(1)">← Back</button>
+      <button class="back-link" onclick="goTo(0)">← Back</button>
     </div>
   </div>
 
@@ -400,8 +400,8 @@
     <p class="hint">Or select up to 3 categories below:</p>
     <div class="obj-grid" id="objGrid"></div>
     <div class="btn-row">
-      <button class="btn-primary" id="step3Next" onclick="goTo(4)" disabled>Continue →</button>
-      <button class="back-link" onclick="goTo(2)">← Back</button>
+      <button class="btn-primary" id="step3Next" onclick="goTo(3)" disabled>Continue →</button>
+      <button class="back-link" onclick="goTo(1)">← Back</button>
     </div>
   </div>
 
@@ -425,7 +425,7 @@
     <div class="error-box" id="errorBox" style="display:none"></div>
 
     <div class="btn-row" style="margin-top:0.5rem">
-      <button class="back-link" onclick="goTo(3)">← Back</button>
+      <button class="back-link" onclick="goTo(2)">← Back</button>
     </div>
   </div>
 
@@ -603,7 +603,7 @@ function init() {
 
 // ── NAVIGATION ─────────────────────────────────────────────────────────────
 function goTo(n) {
-  if (n === 4) buildSummary();
+  if (n === 3) buildSummary();
   document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === n));
   document.querySelectorAll('.step-indicator').forEach(s => {
     const sn = parseInt(s.dataset.step);
@@ -631,7 +631,7 @@ function selectArea(area, btn) {
     cg.appendChild(b);
   });
 
-  setTimeout(() => goTo(2), 120);
+  setTimeout(() => goTo(1), 120);
 }
 
 // ── STEP 2: Case type ──────────────────────────────────────────────────────
@@ -639,7 +639,7 @@ function selectCase(c, btn) {
   state.caseType = c;
   document.querySelectorAll('#caseGrid .option-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  setTimeout(() => goTo(3), 120);
+  setTimeout(() => goTo(2), 120);
 }
 
 // ── STEP 3: Objections ─────────────────────────────────────────────────────
@@ -741,7 +741,7 @@ async function generateScript() {
     state.scriptRows = parsed;
 
     buildPreview(parsed);
-    goTo(5);
+    goTo(4);
 
     document.getElementById('resultSummary').textContent =
       `Generated a ${parsed.length}-line trial script for a ${state.area} / ${state.caseType} case, containing ${parsed.filter(r => r.objectionRequired === 'Yes').length} objectionable moments across ${state.chosenObjTypes.length} objection types.`;
@@ -885,7 +885,7 @@ function startOver() {
   document.getElementById('generateArea').style.display = 'block';
   document.getElementById('generatingBox').style.display = 'none';
   document.getElementById('errorBox').style.display = 'none';
-  goTo(1);  // keep API key, just restart selections
+  goTo(0);
 }
 
 // ── API KEY ────────────────────────────────────────────────────────────────
