@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trial Script Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap');
+
+  :root {
+    --navy: #0f1f3d;
+    --navy-light: #1a3260;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --cream: #f7f3ec;
+    --cream-dark: #ede7d9;
+    --text: #1c1c1c;
+    --text-muted: #5a5a5a;
+    --white: #ffffff;
+    --success: #2d6a4f;
+    --border: rgba(15,31,61,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Source Sans 3', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--navy);
+    padding: 2rem 2.5rem 1.5rem;
+    border-bottom: 3px solid var(--gold);
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.9rem;
+    color: var(--white);
+    letter-spacing: 0.02em;
+  }
+  header p {
+    color: rgba(255,255,255,0.6);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+    font-weight: 300;
+  }
+
+  /* ── Progress bar ── */
+  .progress-bar {
+    display: flex;
+    background: var(--navy-light);
+    padding: 0 2.5rem;
+  }
+  .step-indicator {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+    cursor: default;
+  }
+  .step-indicator.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+  .step-indicator.done {
+    color: rgba(255,255,255,0.55);
+  }
+
+  /* ── Main layout ── */
+  main {
+    max-width: 820px;
+    margin: 2.5rem auto;
+    padding: 0 1.5rem;
+  }
+
+  /* ── Cards / Panels ── */
+  .panel {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2rem 2.25rem;
+    margin-bottom: 1.5rem;
+    display: none;
+  }
+  .panel.active { display: block; }
+
+  .panel-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    color: var(--navy);
+    margin-bottom: 0.3rem;
+  }
+  .panel-sub {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+
+  /* ── Option grids ── */
+  .option-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 0.7rem;
+    margin-bottom: 1rem;
+  }
+  .option-btn {
+    background: var(--cream);
+    border: 1.5px solid var(--border);
+    border-radius: 5px;
+    padding: 0.8rem 1rem;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.18s;
+    line-height: 1.35;
+  }
+  .option-btn:hover {
+    border-color: var(--navy);
+    background: var(--cream-dark);
+  }
+  .option-btn.selected {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: var(--white);
+  }
+  .option-btn.gold-select {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--navy);
+    font-weight: 600;
+  }
+  .option-btn .opt-num {
+    display: block;
+    font-size: 0.7rem;
+    opacity: 0.6;
+    margin-bottom: 0.15rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Objection grid (3 cols) ── */
+  .obj-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+  .obj-btn {
+    background: var(--cream);
+    border: 1.5px solid var(--border);
+    border-radius: 5px;
+    padding: 0.65rem 0.9rem;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.83rem;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .obj-btn:hover { border-color: var(--navy); background: var(--cream-dark); }
+  .obj-btn.selected { background: var(--navy); border-color: var(--navy); color: var(--white); }
+  .obj-btn .check { font-size: 0.7rem; opacity: 0; transition: opacity 0.15s; }
+  .obj-btn.selected .check { opacity: 1; }
+
+  .choose-me-btn {
+    background: transparent;
+    border: 1.5px dashed var(--gold);
+    border-radius: 5px;
+    padding: 0.65rem 1.2rem;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: var(--gold);
+    cursor: pointer;
+    transition: all 0.18s;
+    margin-bottom: 1rem;
+  }
+  .choose-me-btn:hover { background: var(--gold); color: var(--navy); }
+
+  .hint { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; }
+
+  /* ── Primary action button ── */
+  .btn-primary {
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    border-radius: 5px;
+    padding: 0.75rem 2rem;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s;
+    letter-spacing: 0.03em;
+  }
+  .btn-primary:hover { background: var(--navy-light); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-gold {
+    background: var(--gold);
+    color: var(--navy);
+    border: none;
+    border-radius: 5px;
+    padding: 0.75rem 2rem;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.18s;
+  }
+  .btn-gold:hover { background: var(--gold-light); }
+
+  .btn-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-top: 1.25rem; }
+
+  /* ── Summary card ── */
+  .summary-card {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1.1rem 1.4rem;
+    margin-bottom: 1.5rem;
+  }
+  .summary-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--navy);
+    margin-bottom: 0.5rem;
+  }
+  .summary-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+    font-size: 0.87rem;
+  }
+  .summary-label { color: var(--text-muted); min-width: 130px; font-weight: 500; }
+  .summary-value { color: var(--text); }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.2rem; }
+  .tag {
+    background: var(--navy);
+    color: var(--white);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 3px;
+    letter-spacing: 0.03em;
+  }
+
+  /* ── Generating state ── */
+  .generating-box {
+    text-align: center;
+    padding: 3rem 2rem;
+  }
+  .spinner {
+    width: 42px; height: 42px;
+    border: 3px solid var(--cream-dark);
+    border-top-color: var(--navy);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1.25rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .gen-status {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+  }
+  .gen-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: var(--navy);
+    margin-bottom: 0.25rem;
+  }
+
+  /* ── Result ── */
+  .result-box {
+    border: 1.5px solid var(--success);
+    border-radius: 5px;
+    padding: 1.5rem;
+    background: #f0faf5;
+    margin-bottom: 1.5rem;
+  }
+  .result-box h3 {
+    font-family: 'Playfair Display', serif;
+    color: var(--success);
+    margin-bottom: 0.4rem;
+  }
+  .result-box p { font-size: 0.88rem; color: #2d5a45; line-height: 1.6; }
+
+  /* ── Preview table ── */
+  .preview-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    margin-bottom: 1.25rem;
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
+  th {
+    background: var(--navy);
+    color: var(--white);
+    padding: 0.5rem 0.7rem;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  td {
+    padding: 0.45rem 0.7rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  tr:nth-child(even) td { background: var(--cream); }
+  tr:hover td { background: var(--cream-dark); }
+  .yes-cell { color: #b5451b; font-weight: 600; }
+  .no-cell { color: var(--text-muted); }
+
+  /* back link */
+  .back-link {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.83rem;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    font-family: 'Source Sans 3', sans-serif;
+  }
+  .back-link:hover { color: var(--navy); }
+
+  .error-box {
+    background: #fff0ee;
+    border: 1px solid #e07060;
+    border-radius: 5px;
+    padding: 1rem 1.25rem;
+    color: #7a2020;
+    font-size: 0.88rem;
+    margin-bottom: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Trial Script Generator</h1>
+  <p>Law School Objection Training — Script Creation Module</p>
+</header>
+
+<div class="progress-bar" id="progressBar">
+  <div class="step-indicator done" data-step="0">0 · API Key</div>
+  <div class="step-indicator active" data-step="1">1 · Area of Law</div>
+  <div class="step-indicator" data-step="2">2 · Case Type</div>
+  <div class="step-indicator" data-step="3">3 · Objections</div>
+  <div class="step-indicator" data-step="4">4 · Generate</div>
+  <div class="step-indicator" data-step="5">5 · Download</div>
+</div>
+
+<main>
+
+  <!-- STEP 0: API Key -->
+  <div class="panel" id="step0">
+    <div class="panel-title">Enter Your Anthropic API Key</div>
+    <div class="panel-sub">This tool calls the Claude API to generate trial scripts. Your key is used only in your browser for this session and is never stored anywhere.<br><br>Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--navy)">console.anthropic.com</a>.</div>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-…"
+      style="width:100%;padding:0.7rem 1rem;font-size:0.9rem;border:1.5px solid var(--border);border-radius:5px;font-family:'Source Sans 3',sans-serif;margin-bottom:0.75rem;background:var(--cream);"
+      oninput="checkApiKey()" onkeydown="if(event.key==='Enter')submitApiKey()">
+    <div class="error-box" id="apiKeyError" style="display:none;margin-bottom:0.75rem"></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="apiKeyNext" onclick="submitApiKey()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- STEP 1: Area of Law -->
+  <div class="panel active" id="step1">
+    <div class="panel-title">Select an Area of Law</div>
+    <div class="panel-sub">Choose the substantive area of law this trial will involve.</div>
+    <div class="option-grid" id="areaGrid"></div>
+  </div>
+
+  <!-- STEP 2: Case Type -->
+  <div class="panel" id="step2">
+    <div class="panel-title">Select the Type of Case</div>
+    <div class="panel-sub" id="step2Sub">Choose the specific category of lawsuit.</div>
+    <div class="option-grid" id="caseGrid"></div>
+    <div class="btn-row">
+      <button class="back-link" onclick="goTo(1)">← Back</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Objections -->
+  <div class="panel" id="step3">
+    <div class="panel-title">Select Objection Categories</div>
+    <div class="panel-sub">Choose up to three categories of objections to include in the script. The game will randomly select 5–10 specific objections from your chosen categories.</div>
+    <button class="choose-me-btn" id="chooseMeBtn" onclick="chooseForMe()">🎲 Choose for me</button>
+    <p class="hint">Or select up to 3 categories below:</p>
+    <div class="obj-grid" id="objGrid"></div>
+    <div class="btn-row">
+      <button class="btn-primary" id="step3Next" onclick="goTo(4)" disabled>Continue →</button>
+      <button class="back-link" onclick="goTo(2)">← Back</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Generating -->
+  <div class="panel" id="step4">
+    <div class="panel-title">Review & Generate Script</div>
+    <div class="panel-sub">Confirm your selections, then generate the trial script.</div>
+
+    <div class="summary-card" id="summaryCard"></div>
+
+    <div id="generateArea">
+      <button class="btn-gold" id="generateBtn" onclick="generateScript()">⚖ Generate Trial Script</button>
+    </div>
+
+    <div id="generatingBox" class="generating-box" style="display:none">
+      <div class="spinner"></div>
+      <div class="gen-title">Drafting Your Trial Script</div>
+      <div class="gen-status" id="genStatus">Constructing case facts and witness testimony…</div>
+    </div>
+
+    <div class="error-box" id="errorBox" style="display:none"></div>
+
+    <div class="btn-row" style="margin-top:0.5rem">
+      <button class="back-link" onclick="goTo(3)">← Back</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: Download -->
+  <div class="panel" id="step5">
+    <div class="panel-title">Your Script is Ready</div>
+
+    <div class="result-box">
+      <h3>✓ Script Generated Successfully</h3>
+      <p id="resultSummary"></p>
+    </div>
+
+    <div class="preview-wrap">
+      <table id="previewTable">
+        <thead>
+          <tr>
+            <th>Speaker</th>
+            <th>Spoken Text / Action</th>
+            <th>Objection?</th>
+            <th>Correct Objection</th>
+            <th>Alt Speaker</th>
+            <th>Alternate Text</th>
+          </tr>
+        </thead>
+        <tbody id="previewBody"></tbody>
+      </table>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-gold" onclick="downloadExcel()">⬇ Download as Excel (.xlsx)</button>
+      <button class="btn-primary" onclick="startOver()">Generate Another Script</button>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── DATA ───────────────────────────────────────────────────────────────────
+
+const AREAS = {
+  "Common Law Contracts": [
+    "Breach of contract (failure to perform a promised obligation)",
+    "Promissory estoppel (detrimental reliance on a promise outside a formal contract)",
+    "Unjust enrichment / quasi-contract (one party unfairly benefits at another's expense)",
+    "Misrepresentation / fraudulent inducement (false statements that induced contract formation)",
+    "Anticipatory repudiation (one party declares in advance they won't perform)"
+  ],
+  "Criminal Law": [
+    "Crimes against persons (assault, battery, homicide)",
+    "Crimes against property (theft, burglary, arson)",
+    "Crimes against public order (disorderly conduct, riot, obstruction)",
+    "Drug offenses (possession, distribution, trafficking)",
+    "White collar crime (fraud, embezzlement, money laundering)"
+  ],
+  "Real Property": [
+    "Trespass to land (unauthorized entry or encroachment)",
+    "Adverse possession (claim of title based on open, notorious, long-term occupation)",
+    "Easement disputes (scope, termination, or denial of a right to use another's land)",
+    "Landlord-tenant disputes (eviction, habitability, security deposit, lease breach)",
+    "Nuisance (interference with a neighbor's use and enjoyment of their property)"
+  ],
+  "Torts": [
+    "Negligence (failure to exercise reasonable care causing harm)",
+    "Intentional torts (battery, assault, intentional infliction of emotional distress)",
+    "Strict liability (liability without fault, typically for abnormally dangerous activities or defective products)",
+    "Defamation (false statements of fact harming reputation — libel or slander)",
+    "Invasion of privacy (intrusion, false light, appropriation of likeness, public disclosure of private facts)"
+  ]
+};
+
+const OBJECTIONS = {
+  "Relevance": [
+    "Irrelevant (FRE 401)",
+    "Unfair prejudice outweighs probative value (FRE 403)",
+    "Confusion of the issues (FRE 403)",
+    "Misleading the jury (FRE 403)",
+    "Waste of time / cumulative evidence (FRE 403)"
+  ],
+  "Form of the Question": [
+    "Leading question (improper on direct examination)",
+    "Compound question",
+    "Assumes facts not in evidence",
+    "Argumentative / badgering the witness",
+    "Vague and ambiguous",
+    "Calls for a narrative",
+    "Asked and answered",
+    "Mischaracterizes prior testimony"
+  ],
+  "Witness Competency and Knowledge": [
+    "Lack of personal knowledge (FRE 602)",
+    "Speculation",
+    "Calls for a legal conclusion",
+    "Improper lay opinion (FRE 701)",
+    "Improper expert opinion (FRE 702)",
+    "Expert not qualified",
+    "Improper basis for expert opinion (FRE 703)"
+  ],
+  "Hearsay": [
+    "Hearsay (FRE 801/802)",
+    "Double hearsay / hearsay within hearsay (FRE 805)",
+    "Inapplicable hearsay exception claimed",
+    "Prior statement improperly offered as substantive evidence"
+  ],
+  "Character and Prior Acts": [
+    "Improper character evidence (FRE 404(a))",
+    "Improper prior bad acts (FRE 404(b))",
+    "Improper habit evidence (FRE 406)",
+    "Prior conviction improperly offered (FRE 609)",
+    "Improper use of specific instances of conduct (FRE 405)"
+  ],
+  "Authentication and Best Evidence": [
+    "Lack of authentication (FRE 901)",
+    "Best evidence rule / original document rule (FRE 1002)",
+    "Improper summary of voluminous records (FRE 1006)"
+  ],
+  "Privilege": [
+    "Attorney-client privilege",
+    "Spousal / marital privilege",
+    "Physician-patient privilege",
+    "Psychotherapist-patient privilege (Jaffee v. Redmond)",
+    "Clergy-penitent privilege",
+    "Fifth Amendment privilege against self-incrimination"
+  ],
+  "Impeachment": [
+    "Improper impeachment on a collateral matter",
+    "Extrinsic evidence of prior inconsistent statement without foundation (FRE 613)",
+    "Improper use of a prior conviction for impeachment (FRE 609)",
+    "Bolstering (attempting to rehabilitate a witness before they have been impeached)"
+  ],
+  "Sexual Conduct and Victim Privacy": [
+    "Rape shield violation (FRE 412)",
+    "Improper use of sexual assault or child molestation propensity evidence (FRE 413–415)"
+  ],
+  "Procedural / Miscellaneous": [
+    "Speaking objection (counsel is using the objection to coach the witness)",
+    "Improper closing argument (misstating the law or facts)",
+    "Violation of a motion in limine ruling",
+    "Improper judicial notice (FRE 201)",
+    "Improper reference to excluded evidence",
+    "Scope of cross-examination exceeds direct (FRE 611(b))"
+  ]
+};
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let state = {
+  area: null,
+  caseType: null,
+  objCategories: [],
+  chosenObjTypes: [],
+  scriptRows: []
+};
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+function init() {
+  // Build area grid
+  const ag = document.getElementById('areaGrid');
+  Object.keys(AREAS).forEach(area => {
+    const b = document.createElement('button');
+    b.className = 'option-btn';
+    b.textContent = area;
+    b.onclick = () => selectArea(area, b);
+    ag.appendChild(b);
+  });
+
+  // Build objection grid
+  const og = document.getElementById('objGrid');
+  Object.keys(OBJECTIONS).forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'obj-btn';
+    b.innerHTML = `<span class="check">✓</span>${cat}`;
+    b.onclick = () => toggleObj(cat, b);
+    og.appendChild(b);
+  });
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────
+function goTo(n) {
+  if (n === 4) buildSummary();
+  // panels: step0=index0, step1=index1 ... step5=index6
+  document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === n));
+  document.querySelectorAll('.step-indicator').forEach(s => {
+    const sn = parseInt(s.dataset.step);
+    s.classList.toggle('active', sn === n);
+    s.classList.toggle('done', sn < n);
+  });
+}
+
+// ── STEP 1: Area selection ──────────────────────────────────────────────────
+function selectArea(area, btn) {
+  state.area = area;
+  state.caseType = null;
+  document.querySelectorAll('#areaGrid .option-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+
+  // Build case grid
+  const cg = document.getElementById('caseGrid');
+  cg.innerHTML = '';
+  document.getElementById('step2Sub').textContent = `Choose the type of ${area} case for this trial.`;
+  AREAS[area].forEach((c, i) => {
+    const b = document.createElement('button');
+    b.className = 'option-btn';
+    b.innerHTML = `<span class="opt-num">${i + 1}</span>${c}`;
+    b.onclick = () => selectCase(c, b);
+    cg.appendChild(b);
+  });
+
+  setTimeout(() => goTo(2), 120);
+}
+
+// ── STEP 2: Case type ──────────────────────────────────────────────────────
+function selectCase(c, btn) {
+  state.caseType = c;
+  document.querySelectorAll('#caseGrid .option-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  setTimeout(() => goTo(3), 120);
+}
+
+// ── STEP 3: Objections ─────────────────────────────────────────────────────
+function toggleObj(cat, btn) {
+  const idx = state.objCategories.indexOf(cat);
+  if (idx >= 0) {
+    state.objCategories.splice(idx, 1);
+    btn.classList.remove('selected');
+  } else {
+    if (state.objCategories.length >= 3) return;
+    state.objCategories.push(cat);
+    btn.classList.add('selected');
+  }
+  document.getElementById('step3Next').disabled = state.objCategories.length === 0;
+}
+
+function chooseForMe() {
+  // Clear existing
+  state.objCategories = [];
+  document.querySelectorAll('.obj-btn').forEach(b => b.classList.remove('selected'));
+
+  const cats = Object.keys(OBJECTIONS);
+  const count = Math.floor(Math.random() * 2) + 2; // 2 or 3
+  const shuffled = cats.sort(() => Math.random() - 0.5).slice(0, count);
+  shuffled.forEach(cat => {
+    state.objCategories.push(cat);
+    document.querySelectorAll('.obj-btn').forEach(b => {
+      if (b.textContent.trim().replace('✓', '').trim() === cat) b.classList.add('selected');
+    });
+  });
+  document.getElementById('step3Next').disabled = false;
+}
+
+// ── STEP 4: Summary + Generate ─────────────────────────────────────────────
+function buildSummary() {
+  // Pick 5–10 specific objections from chosen categories
+  let pool = [];
+  state.objCategories.forEach(cat => pool = pool.concat(OBJECTIONS[cat]));
+  pool = pool.sort(() => Math.random() - 0.5);
+  const count = Math.min(pool.length, Math.floor(Math.random() * 6) + 5); // 5–10
+  state.chosenObjTypes = pool.slice(0, count);
+
+  const sc = document.getElementById('summaryCard');
+  sc.innerHTML = `
+    <h3>Script Parameters</h3>
+    <div class="summary-row"><span class="summary-label">Area of Law</span><span class="summary-value">${state.area}</span></div>
+    <div class="summary-row"><span class="summary-label">Case Type</span><span class="summary-value">${state.caseType}</span></div>
+    <div class="summary-row"><span class="summary-label">Objection Categories</span><span class="summary-value">${state.objCategories.join(', ')}</span></div>
+    <div class="summary-row">
+      <span class="summary-label">Objections in Script</span>
+      <span class="summary-value">
+        <div class="tag-list">${state.chosenObjTypes.map(o => `<span class="tag">${o}</span>`).join('')}</div>
+      </span>
+    </div>`;
+}
+
+// ── GENERATE ───────────────────────────────────────────────────────────────
+async function generateScript() {
+  document.getElementById('generateArea').style.display = 'none';
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('generatingBox').style.display = 'block';
+
+  const statuses = [
+    "Constructing case facts and witness testimony…",
+    "Writing direct examination questions…",
+    "Embedding objectionable questions…",
+    "Drafting alternate lines for missed objections…",
+    "Finalizing script structure…"
+  ];
+  let si = 0;
+  const statusEl = document.getElementById('genStatus');
+  const statusTimer = setInterval(() => {
+    si = (si + 1) % statuses.length;
+    statusEl.textContent = statuses[si];
+  }, 3500);
+
+  const prompt = buildPrompt();
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-request-source": "user-browser"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 8000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    clearInterval(statusTimer);
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const text = data.content.map(c => c.text || '').join('');
+    const parsed = parseScriptJSON(text);
+    state.scriptRows = parsed;
+
+    buildPreview(parsed);
+    goTo(5);
+
+    document.getElementById('resultSummary').textContent =
+      `Generated a ${parsed.length}-line trial script for a ${state.area} / ${state.caseType} case, containing ${parsed.filter(r => r.objectionRequired === 'Yes').length} objectionable moments across ${state.chosenObjTypes.length} objection types.`;
+
+  } catch (err) {
+    clearInterval(statusTimer);
+    document.getElementById('generatingBox').style.display = 'none';
+    document.getElementById('generateArea').style.display = 'block';
+    const eb = document.getElementById('errorBox');
+    eb.style.display = 'block';
+    eb.textContent = 'Error generating script: ' + err.message + '. Please try again.';
+  }
+}
+
+function buildPrompt() {
+  const objList = state.chosenObjTypes.map((o, i) => `${i+1}. ${o}`).join('\n');
+  return `You are a law professor creating a realistic trial script for a law school objection training game.
+
+CASE DETAILS:
+- Area of Law: ${state.area}
+- Case Type: ${state.caseType}
+
+OBJECTIONS TO EMBED (you must embed each of these at least once in the script):
+${objList}
+
+INSTRUCTIONS:
+Create a realistic direct examination trial script. The script should:
+1. Have a believable case scenario appropriate for the area of law and case type above
+2. Use realistic lawyer and witness names (first initial should suggest their role — e.g., Witness names start with W, Plaintiff attorney with P, Defense with D, Judge with J)
+3. Include a bailiff calling court to order at the start
+4. Have the attorney examine a witness on direct examination
+5. Include 25–40 lines of testimony total
+6. Embed each objectionable question/answer from the list above at least once
+7. For each objectionable line, also write an alternate response the witness gives if the player does NOT object (a brief continuation that shows the damage)
+8. Some rows should have blank Speaker/Text and only contain alternate text (these are the missed-objection consequences for the line immediately above)
+9. End with ACTION / End
+
+OUTPUT FORMAT: Return ONLY a JSON array. No markdown, no explanation, no backticks. Each element has exactly these keys:
+- "speaker": string (or null for alternate-only rows)
+- "text": string (or null for alternate-only rows)  
+- "objectionRequired": "Yes" or "No" (or null for alternate-only rows)
+- "correctObjection": string or null
+- "altSpeaker": string or null
+- "altText": string or null
+
+Rules:
+- For a normal line with no objection needed: speaker, text, "No", null, null, null
+- For an objectionable line: speaker, text, "Yes", "[objection type from list]", null, null
+- For the alternate row following an objectionable line: null, null, null, null, "[witness name]", "[short answer witness gives if player missed the objection]"
+- ACTION rows: speaker="Action", text="[stage direction]", "No", null, null, null
+- Final row: speaker="Action", text="End", "No", null, null, null
+- Every "Yes" row MUST be immediately followed by a null-speaker alternate row
+- Use each objection from the list at least once`;
+}
+
+function parseScriptJSON(raw) {
+  let clean = raw.trim();
+  clean = clean.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+  // Find first [ and last ]
+  const start = clean.indexOf('[');
+  const end = clean.lastIndexOf(']');
+  if (start === -1 || end === -1) throw new Error("Could not find JSON array in response");
+  clean = clean.slice(start, end + 1);
+  return JSON.parse(clean);
+}
+
+// ── PREVIEW ────────────────────────────────────────────────────────────────
+function buildPreview(rows) {
+  const tbody = document.getElementById('previewBody');
+  tbody.innerHTML = '';
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.speaker || ''}</td>
+      <td title="${(r.text || '').replace(/"/g,"&quot;")}">${(r.text || '').substring(0, 60)}${(r.text||'').length > 60 ? '…' : ''}</td>
+      <td class="${r.objectionRequired === 'Yes' ? 'yes-cell' : 'no-cell'}">${r.objectionRequired || ''}</td>
+      <td>${r.correctObjection || ''}</td>
+      <td>${r.altSpeaker || ''}</td>
+      <td title="${(r.altText || '').replace(/"/g,"&quot;")}">${(r.altText || '').substring(0, 40)}${(r.altText||'').length > 40 ? '…' : ''}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── EXCEL DOWNLOAD ─────────────────────────────────────────────────────────
+function downloadExcel() {
+  const wb = XLSX.utils.book_new();
+
+  const headers = [
+    "Speaker",
+    "Spoken Text / Action",
+    "Objection Required (Yes/No)",
+    "Correct Objection Type",
+    "Alternate Speaker",
+    "Alternate Text"
+  ];
+
+  const wsData = [headers];
+  state.scriptRows.forEach(r => {
+    wsData.push([
+      r.speaker || '',
+      r.text || '',
+      r.objectionRequired || '',
+      r.correctObjection || '',
+      r.altSpeaker || '',
+      r.altText || ''
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // Column widths
+  ws['!cols'] = [
+    { wch: 14 },
+    { wch: 60 },
+    { wch: 22 },
+    { wch: 35 },
+    { wch: 16 },
+    { wch: 50 }
+  ];
+
+  // Style header row bold (basic)
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    const addr = XLSX.utils.encode_cell({ r: 0, c });
+    if (!ws[addr]) continue;
+    ws[addr].s = { font: { bold: true } };
+  }
+
+  const areaSlug = state.area.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+  const caseSlug = state.caseType.split('(')[0].trim().replace(/\s+/g, '_').substring(0, 20);
+
+  XLSX.utils.book_append_sheet(wb, ws, "Trial Script");
+  XLSX.writeFile(wb, `TrialScript_${areaSlug}_${caseSlug}.xlsx`);
+}
+
+// ── START OVER ─────────────────────────────────────────────────────────────
+function startOver() {
+  state = { area: null, caseType: null, objCategories: [], chosenObjTypes: [], scriptRows: [] };
+  document.querySelectorAll('.option-btn, .obj-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('step3Next').disabled = true;
+  document.getElementById('generateArea').style.display = 'block';
+  document.getElementById('generatingBox').style.display = 'none';
+  document.getElementById('errorBox').style.display = 'none';
+  goTo(1);  // keep API key, just restart selections
+}
+
+// ── API KEY ────────────────────────────────────────────────────────────────
+let apiKey = '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';
+
+function checkApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  document.getElementById('apiKeyNext').disabled = val.length < 20;
+}
+
+function submitApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (val.length < 20) return;
+  apiKey = val;
+  document.getElementById('apiKeyError').style.display = 'none';
+  goTo(1);  // keep API key, just restart selections
+}
+
+init();
+</script>
+</body>
+</html>
