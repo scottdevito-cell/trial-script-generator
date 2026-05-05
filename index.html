@@ -230,8 +230,10 @@ async function generate(){
   try{
     const res=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:8000,messages:[{role:"user",content:prompt}]})});
     clearInterval(tmr);
-    const data=await res.json();
+    let data;
+    try{ data=await res.json(); }catch(e){ throw new Error("Server returned invalid response. Check function logs."); }
     if(data.error)throw new Error(data.error.message);
+    if(!data.content)throw new Error("No content in response: "+JSON.stringify(data).substring(0,200));
     const raw=data.content.map(c=>c.text||"").join("");
     const clean=raw.replace(/```json|```/g,"").trim();
     const s=clean.indexOf("["),e=clean.lastIndexOf("]");
